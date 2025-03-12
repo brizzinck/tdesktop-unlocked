@@ -82,7 +82,7 @@ jobs:
             echo "ARTIFACT_NAME=Telegram" >> $GITHUB_ENV
           fi
 
-          docker run --rm \
+          sudo docker run --rm \
           -v $PWD:/usr/src/tdesktop \
           -e CONFIG=Release \
           tdesktop:centos_env \
