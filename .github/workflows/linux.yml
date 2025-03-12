@@ -63,6 +63,11 @@ jobs:
           submodules: recursive
           path: ${{ env.REPO_NAME }}
 
+      - name: Prepare output directory
+        run: |
+          mkdir -p $REPO_NAME/out
+          chmod -R 777 $REPO_NAME/out
+
       - name: First set up.
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
