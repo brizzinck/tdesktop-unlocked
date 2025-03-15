@@ -50,7 +50,7 @@ jobs:
         generator: ["", "Ninja Multi-Config"]
 
     env:
-      UPLOAD_ARTIFACT: "false"
+      UPLOAD_ARTIFACT: "true"
       ONLY_CACHE: "false"
       PREPARE_PATH: "Telegram/build/prepare/prepare.py"
 
@@ -180,7 +180,7 @@ jobs:
           -D CMAKE_C_FLAGS="/WX" ^
           -D CMAKE_CXX_FLAGS="/WX" ^
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
-          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON ^
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF ^
           -D DESKTOP_APP_NO_PDB=ON ^
           %TDESKTOP_BUILD_DEFINE%
 
