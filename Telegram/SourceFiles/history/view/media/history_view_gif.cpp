@@ -525,11 +525,7 @@ void Gif::draw(Painter &p, const PaintContext &context) const {
 
 	const auto inTTLViewer = _parent->delegate()->elementContext()
 		== Context::TTLViewer;
-	const auto revealed = (isRound
-			&& item->media()->ttlSeconds()
-			&& !inTTLViewer)
-		? 0
-		: (!isRound && _spoiler)
+	const auto revealed = (!isRound && _spoiler)
 		? _spoiler->revealAnimation.value(_spoiler->revealed ? 1. : 0.)
 		: 1.;
 	const auto fullHiddenBySpoiler = (revealed == 0.);

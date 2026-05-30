@@ -5419,13 +5419,7 @@ void ConfirmSendNowSelectedItems(not_null<ListWidget*> widget) {
 CopyRestrictionType CopyRestrictionTypeFor(
 		not_null<PeerData*> peer,
 		HistoryItem *item) {
-	return (peer->allowsForwarding() && (!item || !item->forbidsForward()))
-		? CopyRestrictionType::None
-		: peer->isUser()
-		? CopyRestrictionType::User
-		: peer->isBroadcast()
-		? CopyRestrictionType::Channel
-		: CopyRestrictionType::Group;
+	return CopyRestrictionType::None;
 }
 
 CopyRestrictionType CopyMediaRestrictionTypeFor(
