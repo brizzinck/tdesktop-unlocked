@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vlad Lavrishko <lavrishkovlad@gmail.com>
+Date: Sat, 30 May 2026 21:46:31 +0300
+Subject: [PATCH 2/2] build: disable autoupdate and crash reports, remove
+ updater artifact
+
+Co-Authored-By: Claude Sonnet 4.6 (1M context) <noreply@anthropic.com>
+---
+ .github/workflows/win.yml |  5 ++---
+ sync-upstream.sh          | 22 ++++++++++++++++++++++
+ 2 files changed, 24 insertions(+), 3 deletions(-)
+ create mode 100755 sync-upstream.sh
+
+diff --git a/.github/workflows/win.yml b/.github/workflows/win.yml
+index 3a181a8527..0e959b3586 100644
+--- a/.github/workflows/win.yml
++++ b/.github/workflows/win.yml
+@@ -215,8 +215,8 @@ jobs:
+           -D CMAKE_CONFIGURATION_TYPES=Debug ^
+           -D CMAKE_COMPILE_WARNING_AS_ERROR=ON ^
+           -D CMAKE_MSVC_DEBUG_INFORMATION_FORMAT= ^
+-          -D DESKTOP_APP_DISABLE_AUTOUPDATE=OFF ^
+-          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF ^
++          -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
++          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON ^
+           %TDESKTOP_BUILD_DEFINE%
+ 
+           cmake --build ..\out --config Debug --parallel
+@@ -227,7 +227,6 @@ jobs:
+           set OUT=%TBUILD%\%REPO_NAME%\out\Debug
+           mkdir artifact
+           move %OUT%\Telegram.exe artifact/
+-          move %OUT%\Updater.exe artifact/
+       - uses: actions/upload-artifact@v7
+         name: Upload artifact.
+         if: (env.UPLOAD_ARTIFACT == 'true') || (github.ref == 'refs/heads/nightly')
+diff --git a/sync-upstream.sh b/sync-upstream.sh
+new file mode 100755
+index 0000000000..a4aa66df38
+--- /dev/null
++++ b/sync-upstream.sh
+@@ -0,0 +1,22 @@
++#!/usr/bin/env bash
++# Sync dev branch with upstream telegramdesktop/tdesktop and re-apply patches.
++set -euo pipefail
++
++UPSTREAM_REMOTE="upstream"
++UPSTREAM_BRANCH="dev"
++PATCHES_DIR="$(dirname "$0")/patches"
++
++echo "==> Fetching upstream..."
++git fetch "$UPSTREAM_REMOTE" "$UPSTREAM_BRANCH" --no-tags
++
++echo "==> Resetting to upstream/dev..."
++git reset --hard "$UPSTREAM_REMOTE/$UPSTREAM_BRANCH"
++
++echo "==> Applying patches from $PATCHES_DIR..."
++git am --whitespace=nowarn "$PATCHES_DIR"/*.patch
++
++echo "==> Regenerating patches..."
++git format-patch "$UPSTREAM_REMOTE/$UPSTREAM_BRANCH"..HEAD \
++    --output-directory "$PATCHES_DIR" --zero-commit
++
++echo "Done. dev is now $(git log --oneline upstream/dev..HEAD | wc -l | tr -d ' ') commit(s) ahead of upstream."
+-- 
+2.54.0
+

@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vlad Lavrishko <lavrishkovlad@gmail.com>
+Date: Sat, 30 May 2026 21:44:24 +0300
+Subject: [PATCH 1/2] unlock: bypass forward/save restrictions and reveal
+ view-once media
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- forbidsForward() and forbidsSaving() always return false — removes
+  per-message NoForwards flag enforcement
+- hasCopyRestriction() in HistoryInner always returns false — bypasses
+  per-peer allowsForwarding() block on text copy
+- CopyRestrictionTypeFor() always returns None — same bypass for list
+  widget context menus
+- hasCopyMediaRestriction() in media viewer returns false for non-story
+  — enables download from restricted chats in the overlay
+- Gif::draw: view-once (TTL) round video notes no longer hidden; the
+  revealed value no longer collapses to 0 for TTL media outside the
+  TTL viewer layer
+
+Co-Authored-By: Claude Sonnet 4.6 (1M context) <noreply@anthropic.com>
+---
+ Telegram/SourceFiles/history/history_inner_widget.cpp     | 2 +-
+ Telegram/SourceFiles/history/history_item.cpp             | 7 +------
+ .../SourceFiles/history/view/history_view_list_widget.cpp | 8 +-------
+ .../SourceFiles/history/view/media/history_view_gif.cpp   | 6 +-----
+ .../SourceFiles/media/view/media_view_overlay_widget.cpp  | 3 +--
+ 5 files changed, 5 insertions(+), 21 deletions(-)
+
+diff --git a/Telegram/SourceFiles/history/history_inner_widget.cpp b/Telegram/SourceFiles/history/history_inner_widget.cpp
+index 702413801a..b12edc35cc 100644
+--- a/Telegram/SourceFiles/history/history_inner_widget.cpp
++++ b/Telegram/SourceFiles/history/history_inner_widget.cpp
+@@ -3598,7 +3598,7 @@ void HistoryInner::showContextMenu(QContextMenuEvent *e, bool showFromTouch) {
+ }
+ 
+ bool HistoryInner::hasCopyRestriction(HistoryItem *item) const {
+-	return !_peer->allowsForwarding() || (item && item->forbidsForward());
++	return false;
+ }
+ 
+ bool HistoryInner::hasCopyMediaRestriction(
+diff --git a/Telegram/SourceFiles/history/history_item.cpp b/Telegram/SourceFiles/history/history_item.cpp
+index 608ea0e71d..133a3c0058 100644
+--- a/Telegram/SourceFiles/history/history_item.cpp
++++ b/Telegram/SourceFiles/history/history_item.cpp
+@@ -2905,15 +2905,10 @@ bool HistoryItem::canStopPoll() const {
+ }
+ 
+ bool HistoryItem::forbidsForward() const {
+-	return (_flags & MessageFlag::NoForwards);
++	return false;
+ }
+ 
+ bool HistoryItem::forbidsSaving() const {
+-	if (forbidsForward()) {
+-		return true;
+-	} else if (const auto invoice = _media ? _media->invoice() : nullptr) {
+-		return HasExtendedMedia(*invoice);
+-	}
+ 	return false;
+ }
+ 
+diff --git a/Telegram/SourceFiles/history/view/history_view_list_widget.cpp b/Telegram/SourceFiles/history/view/history_view_list_widget.cpp
+index 3bb5f5fd72..d724c18d56 100644
+--- a/Telegram/SourceFiles/history/view/history_view_list_widget.cpp
++++ b/Telegram/SourceFiles/history/view/history_view_list_widget.cpp
+@@ -5419,13 +5419,7 @@ void ConfirmSendNowSelectedItems(not_null<ListWidget*> widget) {
+ CopyRestrictionType CopyRestrictionTypeFor(
+ 		not_null<PeerData*> peer,
+ 		HistoryItem *item) {
+-	return (peer->allowsForwarding() && (!item || !item->forbidsForward()))
+-		? CopyRestrictionType::None
+-		: peer->isUser()
+-		? CopyRestrictionType::User
+-		: peer->isBroadcast()
+-		? CopyRestrictionType::Channel
+-		: CopyRestrictionType::Group;
++	return CopyRestrictionType::None;
+ }
+ 
+ CopyRestrictionType CopyMediaRestrictionTypeFor(
+diff --git a/Telegram/SourceFiles/history/view/media/history_view_gif.cpp b/Telegram/SourceFiles/history/view/media/history_view_gif.cpp
+index fab6d5b2dc..d58b75da42 100644
+--- a/Telegram/SourceFiles/history/view/media/history_view_gif.cpp
++++ b/Telegram/SourceFiles/history/view/media/history_view_gif.cpp
+@@ -525,11 +525,7 @@ void Gif::draw(Painter &p, const PaintContext &context) const {
+ 
+ 	const auto inTTLViewer = _parent->delegate()->elementContext()
+ 		== Context::TTLViewer;
+-	const auto revealed = (isRound
+-			&& item->media()->ttlSeconds()
+-			&& !inTTLViewer)
+-		? 0
+-		: (!isRound && _spoiler)
++	const auto revealed = (!isRound && _spoiler)
+ 		? _spoiler->revealAnimation.value(_spoiler->revealed ? 1. : 0.)
+ 		: 1.;
+ 	const auto fullHiddenBySpoiler = (revealed == 0.);
+diff --git a/Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp b/Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp
+index 68935f3e15..a12401a83b 100644
+--- a/Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp
++++ b/Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp
+@@ -1220,8 +1220,7 @@ bool OverlayWidget::hasCopyMediaRestriction(bool skipPremiumCheck) const {
+ 			? !story->canDownloadIfPremium()
+ 			: !story->canDownloadChecked();
+ 	}
+-	return (_history && !_history->peer->allowsForwarding())
+-		|| (_message && _message->forbidsSaving());
++	return false;
+ }
+ 
+ bool OverlayWidget::showCopyMediaRestriction(bool skipPRemiumCheck) {
+-- 
+2.54.0
+
