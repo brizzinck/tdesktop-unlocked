@@ -1377,7 +1377,7 @@ void CreditsController::rowClicked(not_null<PeerListRow*> row) {
 	}
 }
 
-rpl::producer<bool> CreditsController::allLoadedValue() const {
+[[maybe_unused]] rpl::producer<bool> CreditsController::allLoadedValue() const {
 	return _allLoaded.value();
 }
 
