@@ -963,7 +963,14 @@ MediaCheckResult CheckMessageMedia(const MTPMessageMedia &media) {
 	}, [](const MTPDmessageMediaPhoto &data) {
 		const auto photo = data.vphoto();
 		if (data.vttl_seconds()) {
-			return Result::HasUnsupportedTimeToLive;
+			if (!photo) {
+				return Result::HasExpiredMediaTimeToLive;
+			}
+			return photo->match([](const MTPDphoto &) {
+				return Result::Good;
+			}, [](const MTPDphotoEmpty &) {
+				return Result::HasExpiredMediaTimeToLive;
+			});
 		} else if (!photo) {
 			return Result::Empty;
 		}

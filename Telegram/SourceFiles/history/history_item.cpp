@@ -280,10 +280,17 @@ std::unique_ptr<Data::Media> HistoryItem::CreateMedia(
 	}, [&](const MTPDmessageMediaPhoto &media) -> Result {
 		const auto photo = media.vphoto();
 		if (media.vttl_seconds()) {
-			LOG(("App Error: "
-				"Unexpected MTPMessageMediaPhoto "
-				"with ttl_seconds in CreateMedia."));
-			return nullptr;
+			if (!photo) {
+				return nullptr;
+			}
+			return photo->match([&](const MTPDphoto &data) -> Result {
+				return std::make_unique<Data::MediaPhoto>(
+					item,
+					item->history()->owner().processPhoto(data),
+					true);
+			}, [](const MTPDphotoEmpty &) -> Result {
+				return nullptr;
+			});
 		} else if (!photo) {
 			LOG(("API Error: "
 				"Got MTPMessageMediaPhoto "
